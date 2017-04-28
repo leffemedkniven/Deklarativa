@@ -39,18 +39,25 @@ buildWrite e = Write e
 
 
 exec :: [T] -> Dictionary.T String Integer -> [Integer] -> [Integer]
-exec (Assignment str expr: stmts) dict input =
-    exec stmts (Dictionary.insert(str, (Expr.value expr dict)) dict) input
-exec (If cond thenStmts elseStmts : stmts) dict input =
+exec (Assignment s e: stmts) dict input =
+    exec stmts (Dictionary.insert(s, (Expr.value e dict)) dict) input
+exec (If cond thenStmts elseStmts: stmts) dict input =
     if (Expr.value cond dict)>0
     then exec (thenStmts: stmts) dict input
     else exec (elseStmts: stmts) dict input
-exec (Skip :stmts) dict input =
+exec (Skip : stmts) dict input =
     exec stmts dict input
+exec (Begin (x:xs): stmts) dict input =
+    exec (x:xs++stmts) dict input
 exec (While cond doStmts: stmts) dict input =
     if (Expr.value cond dict)>0
     then exec (doStmts: While cond doStmts: stmts) dict input
     else exec stmts dict input
+exec (Read v: stmts) dict (x:xs) =
+    exec stmts (Dictionary.insert(v, x) dict) xs
+exec (Write e: stmts) dict input =
+    (Expr.value expr dict) :(exec stmts dict input)
+
 
 instance Parse Statement where
   parse = assignment ! iff ! skip ! begin ! while ! readd ! write
