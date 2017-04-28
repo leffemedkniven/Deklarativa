@@ -13,7 +13,7 @@ p = fromString  ("\
 \      skip;\
 \    else\
 \      write m;\
-\    if m := m + 1;\
+\    m := m + 1;\
 \  end")
 
 

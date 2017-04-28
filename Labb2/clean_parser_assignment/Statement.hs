@@ -39,6 +39,7 @@ buildWrite e = Write e
 
 
 exec :: [T] -> Dictionary.T String Integer -> [Integer] -> [Integer]
+exec [] dict input = []
 exec (Assignment s e: stmts) dict input =
     exec stmts (Dictionary.insert(s, (Expr.value e dict)) dict) input
 exec (If cond thenStmts elseStmts: stmts) dict input =
@@ -56,7 +57,7 @@ exec (While cond doStmts: stmts) dict input =
 exec (Read v: stmts) dict (x:xs) =
     exec stmts (Dictionary.insert(v, x) dict) xs
 exec (Write e: stmts) dict input =
-    (Expr.value expr dict) :(exec stmts dict input)
+    (Expr.value e dict) :(exec stmts dict input)
 
 
 instance Parse Statement where
