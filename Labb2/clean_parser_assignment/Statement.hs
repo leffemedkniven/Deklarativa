@@ -29,10 +29,10 @@ begin = accept "begin" -# iter parse #- require "end" >-> buildBegin
 buildBegin s = Begin s
 
 while = accept "while" -# Expr.parse #- require "do" # parse >-> buildWhile
-buildWhile (e, v) = While e v
+buildWhile (e, s) = While e s
 
 readd = accept "read" -# word #- require ";" >-> buildRead
-buildRead e = Read e
+buildRead v = Read v
 
 write = accept "write" -# Expr.parse #- require ";" >-> buildWrite
 buildWrite e = Write e
@@ -40,8 +40,8 @@ buildWrite e = Write e
 
 exec :: [T] -> Dictionary.T String Integer -> [Integer] -> [Integer]
 exec [] dict input = []
-exec (Assignment s e: stmts) dict input =
-    exec stmts (Dictionary.insert(s, (Expr.value e dict)) dict) input
+exec (Assignment v e: stmts) dict input =
+    exec stmts (Dictionary.insert(v, (Expr.value e dict)) dict) input
 exec (If cond thenStmts elseStmts: stmts) dict input =
     if (Expr.value cond dict)>0
     then exec (thenStmts: stmts) dict input
@@ -62,4 +62,17 @@ exec (Write e: stmts) dict input =
 
 instance Parse Statement where
   parse = assignment ! iff ! skip ! begin ! while ! readd ! write
-  toString = error "no"
+  toString = toStr
+
+toStr (Assignment v e) = v ++ ":=" ++ toString e ++ ";\n"
+toStr (If e s s') = "if " ++ toString e ++ " then\n" ++ toString s
+                                              ++ "else\n " ++ toString s' ++ "\n"
+toStr (Skip) = "skip:\n"
+-- toStr (Begin s) = "begin" ++
+toStr (While e s) = "while " ++ toString e ++ " do\n " ++ toString s ++ "\n"
+toStr (Read v) = "read " ++ v ++ ";\n"
+toStr (Write e) = "write " ++ toString e ++ ";\n"
+toStr (Begin s) = "Begin\n " ++ listToString s ++ " end\n"
+
+listToString [] = []
+listToString (stmt : s) = toString stmt ++ listToString s
