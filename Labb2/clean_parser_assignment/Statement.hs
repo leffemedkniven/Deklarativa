@@ -11,7 +11,8 @@ data Statement =
     Begin [Statement] |
     While Expr.T Statement |
     Read String |
-    Write Expr.T
+    Write Expr.T |
+    Repeat Statement Expr.T
     deriving Show
 
 
@@ -37,6 +38,9 @@ buildRead v = Read v
 write = accept "write" -# Expr.parse #- require ";" >-> buildWrite
 buildWrite e = Write e
 
+repeatt = accept "repeat" -# parse # require "until" -# Expr.parse #- require ";" >-> buildRepeat
+buildRepeat (s, e) = Repeat s e
+
 
 exec :: [T] -> Dictionary.T String Integer -> [Integer] -> [Integer]
 exec [] dict input = []
@@ -58,10 +62,13 @@ exec (Read v: stmts) dict (x:xs) =
     exec stmts (Dictionary.insert(v, x) dict) xs
 exec (Write e: stmts) dict input =
     (Expr.value e dict) :(exec stmts dict input)
-
+exec (Repeat repeatStmt untilStmt: stmts) dict input =
+      if (Expr.value untilStmt dict)>0
+      then exec stmts dict input
+      else exec (repeatStmt: Repeat repeatStmt untilStmt: stmts) dict input
 
 instance Parse Statement where
-  parse = assignment ! iff ! skip ! begin ! while ! readd ! write
+  parse = assignment ! iff ! skip ! begin ! while ! readd ! write ! repeatt
   toString = toStr
 
 toStr (Assignment v e) = v ++ ":=" ++ toString e ++ ";\n"
@@ -71,8 +78,9 @@ toStr (Skip) = "skip:\n"
 -- toStr (Begin s) = "begin" ++
 toStr (While e s) = "while " ++ toString e ++ " do\n " ++ toString s ++ "\n"
 toStr (Read v) = "read " ++ v ++ ";\n"
-toStr (Write e) = "write " ++ toString e ++ ";\n"
-toStr (Begin s) = "Begin\n " ++ listToString s ++ " end\n"
+toStr (Write e) = "write " ++ toString e ++ ";"
+toStr (Begin s) = "Begin\n " ++ listToString s ++ " end"
 
+listToString :: [T] -> String
 listToString [] = []
 listToString (stmt : s) = toString stmt ++ listToString s

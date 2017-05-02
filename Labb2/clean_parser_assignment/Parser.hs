@@ -42,14 +42,8 @@ chars n = char # chars (n-1) >-> cons
 accept :: String -> Parser String
 accept w = (token (chars (length w))) ? (==w)
 
--- require :: String -> Parser String --Self-made
--- require w s
---         | w == take (length w) s = accept w s
---         | otherwise = error ("Missing word " ++ w ++ " in string")
-
 require :: String -> Parser String --Self-made
-require w = (token (chars (length w)) ? (==w)) ! error ("Missing word " ++ w ++ " in string")
-
+require w = (token (chars (length w)) ? (==w)) ! err ("Expecting " ++ w )
 
 lit :: Char -> Parser Char
 lit c = token char ? (==c)
